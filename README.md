@@ -1,97 +1,113 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# ShakeUnlockApp
 
-# Getting Started
+Application React Native qui se déverrouille par **secousses** (seuil dynamique selon le jour de la semaine) ou par **empreinte digitale**.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+---
 
-## Step 1: Start Metro
+## 🚀 Installation et premier lancement
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+```bash
+# 1. Cloner le dépôt
+git clone https://github.com/ton-compte/ShakeUnlockApp.git
+cd ShakeUnlockApp
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+# 2. Installer les dépendances
+npm install
 
-```sh
-# Using npm
-npm start
+# 3. Lancer Metro (dans un terminal)
+npx react-native start --reset-cache
 
-# OR using Yarn
-yarn start
+# 4. Dans un autre terminal, lancer l'app
+npx react-native run-android
 ```
 
-## Step 2: Build and run your app
+> Sur un vrai appareil Android (USB) : exécute `adb reverse tcp:8081 tcp:8081` avant `run-android`
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+---
 
-### Android
+## 📁 Structure et rôle des modules
 
-```sh
-# Using npm
-npm run android
+Le projet est découpé en **5 modules indépendants** qui communiquent via un contrat (`src/shared/interfaces.js`).  
+Chaque module est développé sur sa propre branche.
 
-# OR using Yarn
-yarn android
+### 🔐 `lockManager`
+**Rôle** : Cœur de l'application. Gère l'état global (verrouillé / déverrouillé).  
+**Apport** : Tous les autres modules lisent ou modifient cet état. C'est lui qui décide si l'écran verrouillé ou déverrouillé s'affiche.  
+**Exporte** : `useLock()` (hook avec `isLocked`, `lock()`, `unlock()`)
+
+### 📳 `shakeDetector`
+**Rôle** : Détecte les secousses du téléphone et calcule le seuil requis selon le jour de la semaine.  
+**Apport** : Permet de déverrouiller l'app sans toucher l'écran. Quand le nombre de secousses atteint le seuil, il demande à `lockManager` de déverrouiller.  
+**Exporte** : `startListening()`, `stopListening()`
+
+### 👆 `fingerprintScanner`
+**Rôle** : Interface avec le capteur d'empreinte digitale du téléphone.  
+**Apport** : Offre une seconde méthode de déverrouillage, plus classique et sécurisée. En cas de succès, il demande à `lockManager` de déverrouiller.  
+**Exporte** : `scan()` (retourne une promesse), `isAvailable()`
+
+### 🎨 `ui`
+**Rôle** : Affiche l'interface utilisateur (écran verrouillé / déverrouillé).  
+**Apport** : Rend l'app visible et interactive. Il affiche l'état fourni par `lockManager` et expose le bouton "Reverrouiller". Il ne contient **pas** la logique de déverrouillage.  
+**Exporte** : `LockedScreen`, `UnlockedScreen`, `LockButton`
+
+### 🔗 `integration` (toi, lead)
+**Rôle** : Assemble tous les modules dans `App.js`.  
+**Apport** : C'est le chef d'orchestre. Il branche les détecteurs pour qu'ils appellent `unlock()`, connecte l'UI à `useLock()`, et fait en sorte que le bouton "Reverrouiller" appelle `lock()`.  
+**Exporte** : Rien de spécifique — c'est le point d'entrée final.
+
+---
+
+## 🌿 Branches associées
+
+| Module | Branche |
+|--------|---------|
+| `lockManager` | `feat/lock-manager` |
+| `shakeDetector` | `feat/shake-detector` |
+| `fingerprintScanner` | `feat/fingerprint` |
+| `ui` | `feat/ui` |
+| `integration` | `feat/integration` |
+
+```bash
+git checkout feat/nom-de-votre-module
 ```
 
-### iOS
+---
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+## 🧪 Tester son module indépendamment
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+Chacun peut tester son module seul grâce aux mocks.
 
-```sh
-bundle install
+**Exemple** : le module `ui` peut créer `src/mocks/mockLockManager.js` qui simule `useLock()` sans avoir besoin du vrai `lockManager`.
+
+```javascript
+// src/mocks/mockLockManager.js
+export const useMockLock = () => ({
+  isLocked: true,
+  lock: () => console.log('[mock] lock'),
+  unlock: () => console.log('[mock] unlock'),
+});
 ```
 
-Then, and every time you update your native dependencies, run:
+Puis dans son code, il remplace temporairement l'import du vrai module par le mock.
 
-```sh
-bundle exec pod install
+---
+
+## ⚠️ Règles d'or (pour éviter l'enfer à la fusion)
+
+1. **Ne jamais** modifier le dossier d'un autre module.
+2. **Ne jamais** modifier `src/shared/interfaces.js` sans validation du groupe.
+3. **Committer régulièrement** sur sa propre branche.
+4. **Ne pas merger** sur `main` sans accord du lead.
+
+---
+
+## 🔧 Dépendances principales
+
+```bash
+npm install react-native-biometrics   # pour fingerprintScanner
+npm install react-native-shake        # pour shakeDetector
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+Ces librairies nécessitent une configuration spécifique Android/iOS — voir leur documentation officielle.
 
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+---
