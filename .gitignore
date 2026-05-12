@@ -1,0 +1,49 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# React Native
+.expo/
+.expo-shared/
+.expo-env.local
+.expo-env.json
+
+# Android
+android/app/build/
+android/.gradle/
+android/.idea/
+android/local.properties
+
+# iOS
+ios/build/
+ios/Pods/
+ios/DerivedData/
+
+# IDE & outils
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Tests & coverage
+coverage/
+jest-cache/
+jest-results.json
+
+# Misc
+.DS_Store
+*.log
+*.tmp
+
+# Project-specific
+ShakeUnlockApp/node_modules/
+ShakeUnlockApp/android/app/build/
+ShakeUnlockApp/ios/build/
+ShakeUnlockApp/ios/Pods/
+ShakeUnlockApp/ios/DerivedData/
+ShakeUnlockApp/.expo/
+ShakeUnlockApp/.expo-shared/
+ShakeUnlockApp/.expo-env.local
+ShakeUnlockApp/.expo-env.json
